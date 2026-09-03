@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pendaftaran OSIS SMP Islam Annajah</title>
+  <title>Pendaftaran OSIS SMP Islam An-Najah</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans flex flex-col items-center justify-center p-4">
@@ -92,8 +92,14 @@
   <!-- DASHBOARD ADMIN -->
   <div id="dashboardAdminPage" class="hidden w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6 space-y-4 my-8">
     <div class="flex justify-between items-center border-b pb-3">
-      <h2 class="text-xl font-bold text-slate-800">Dashboard Data Pendaftar OSIS</h2>
-      <button onclick="showPage('landingPage')" class="text-sm text-red-600 hover:underline font-semibold">Logout</button>
+      <div>
+        <h2 class="text-xl font-bold text-slate-800">Dashboard Admin OSIS</h2>
+        <p class="text-xs text-gray-500">Melihat & Mengelola Semua Jawaban Pendaftar</p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button onclick="loadAdminData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border">Refresh Data</button>
+        <button onclick="showPage('landingPage')" class="text-sm text-red-600 hover:underline font-semibold">Logout</button>
+      </div>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse text-xs">
@@ -108,18 +114,19 @@
             <th class="p-2 border">Harapan Diri</th>
             <th class="p-2 border">Pengembangan Diri</th>
             <th class="p-2 border">Harapan OSIS</th>
+            <th class="p-2 border text-center">Aksi</th>
           </tr>
         </thead>
         <tbody id="adminTableBody">
-          <!-- Data dari Apps Script otomatis tampil di sini -->
+          <!-- Data pendaftar otomatis tampil di sini -->
         </tbody>
       </table>
     </div>
   </div>
 
   <script>
-    // URL Apps Script milik Anda yang sudah tersambung
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUQm1aFA3Dxm1_iCyzfATdM_WHHUsxfiqRvePRt0a-W-Ox10O1_RRwEsROLH3Vypam/exec";
+    // URL Apps Script Terbaru Anda:
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhrFasz2qqzeEkN6FBCPXaZtqvDDud9wiioaZXCoGOOhTM3z1Z_HR5TLnl4-gHcn4Z/exec";
 
     function showPage(pageId) {
       ['landingPage', 'formPage', 'loginAdminPage', 'dashboardAdminPage'].forEach(id => {
@@ -180,7 +187,7 @@
 
     async function loadAdminData() {
       const tbody = document.getElementById('adminTableBody');
-      tbody.innerHTML = "<tr><td colspan='9' class='p-4 text-center'>Memuat data dari server...</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='10' class='p-4 text-center'>Memuat data pendaftar...</td></tr>";
 
       try {
         const res = await fetch(SCRIPT_URL);
@@ -188,10 +195,11 @@
         
         tbody.innerHTML = "";
         if (data.length <= 1) {
-          tbody.innerHTML = "<tr><td colspan='9' class='p-4 text-center'>Belum ada pendaftar.</td></tr>";
+          tbody.innerHTML = "<tr><td colspan='10' class='p-4 text-center text-gray-500'>Belum ada pendaftar.</td></tr>";
           return;
         }
 
+        // Menampilkan data dari yang paling baru
         for (let i = data.length - 1; i >= 1; i--) {
           const row = data[i];
           const tr = `
@@ -205,14 +213,37 @@
               <td class="p-2">${row[7]}</td>
               <td class="p-2">${row[8]}</td>
               <td class="p-2">${row[9]}</td>
+              <td class="p-2 text-center">
+                <button onclick="deleteData(${i}, '${row[1]}')" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1 rounded text-[10px]">Hapus</button>
+              </td>
             </tr>
           `;
           tbody.innerHTML += tr;
         }
       } catch (err) {
-        tbody.innerHTML = "<tr><td colspan='9' class='p-4 text-center text-red-500'>Gagal memuat data. Periksa pengaturan jaringan atau pendaftaran baru.</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='10' class='p-4 text-center text-red-500'>Gagal memuat data. Silakan muat ulang.</td></tr>";
+      }
+    }
+
+    async function deleteData(rowIndex, nama) {
+      if (!confirm(`Apakah Anda yakin ingin menghapus data pendaftaran dari "${nama}"?`)) {
+        return;
+      }
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "delete", rowIndex: rowIndex })
+        });
+
+        alert(`Data ${nama} berhasil dihapus!`);
+        loadAdminData();
+      } catch (err) {
+        alert("Gagal menghapus data.");
       }
     }
   </script>
 </body>
-    </html>
+</html>
