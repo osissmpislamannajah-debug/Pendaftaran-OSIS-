@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>E-Voting Guru Terbaik & Tergaul</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Prevent auto zoom on iOS Safari input focus */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between select-none">
+
+    <!-- HEADER NAVIGATION -->
+    <header class="gradient-bg text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 py-3 sm:py-5 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 sm:p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
+                        <i class="fa-solid font-bold fa-award text-2xl sm:text-3xl text-yellow-300"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-3xl font-extrabold tracking-tight">E-Voting Guru</h1>
+                        <p class="text-xs sm:text-sm text-indigo-100">Apresiasi Guru Tergaul & Guru Terbaik Kita!</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation Tabs -->
+            <div class="flex w-full sm:w-auto bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold">
+                <button id="nav-vote" onclick="switchTab('vote')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 bg-white text-indigo-900 shadow active:scale-95">
+                    <i class="fa-solid fa-check-to-slot mr-1.5"></i> Area Vote
+                </button>
+                <button id="nav-results" onclick="switchTab('results')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 text-white hover:bg-white/10 active:scale-95">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Hasil Real-Time
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8 w-full flex-grow">
+
+        <!-- Banner Info Voting Status -->
+        <div id="vote-status-banner" class="mb-6 sm:mb-8 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-sm">
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <div id="status-icon" class="p-2.5 bg-indigo-600 text-white rounded-xl shrink-0">
+                    <i class="fa-solid fa-circle-info text-lg"></i>
+                </div>
+                <div>
+                    <h3 id="status-title" class="font-bold text-indigo-950 text-sm sm:text-base">Status Suara Anda</h3>
+                    <p id="status-desc" class="text-xs sm:text-sm text-indigo-700">Silakan pilih 1 Guru Tergaul & 1 Guru Terbaik.</p>
+                </div>
+            </div>
+            <button id="reset-vote-btn" onclick="resetMyVotes()" class="hidden w-full sm:w-auto px-4 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 rounded-xl border border-rose-200 transition">
+                <i class="fa-solid fa-rotate-left mr-1"></i> Reset Pilihan Saya
+            </button>
+        </div>
+
+        <!-- SECTION 1: VOTING PAGE -->
+        <section id="page-vote" class="space-y-6 sm:space-y-8">
+            
+            <!-- Category Selector Tabs -->
+            <div class="flex justify-center border-b border-slate-200">
+                <nav class="flex space-x-4 sm:space-x-8 w-full justify-center" aria-label="Tabs">
+                    <button id="tab-tergaul" onclick="switchCategory('tergaul')" class="flex-1 sm:flex-initial border-b-2 border-indigo-600 py-3 sm:py-4 px-2 text-xs sm:text-base font-bold text-indigo-600 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition">
+                        <span class="p-1 sm:p-1.5 bg-pink-100 text-pink-600 rounded-lg"><i class="fa-solid fa-fire text-xs sm:text-base"></i></span>
+                        <span>Guru Tergaul</span>
+                        <span id="badge-tergaul" class="hidden text-[10px] sm:text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded-full"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button id="tab-terbaik" onclick="switchCategory('terbaik')" class="flex-1 sm:flex-initial border-b-2 border-transparent py-3 sm:py-4 px-2 text-xs sm:text-base font-medium text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition">
+                        <span class="p-1 sm:p-1.5 bg-amber-100 text-amber-600 rounded-lg"><i class="fa-solid fa-star text-xs sm:text-base"></i></span>
+                        <span>Guru Terbaik</span>
+                        <span id="badge-terbaik" class="hidden text-[10px] sm:text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded-full"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Search & Controls -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-input" oninput="filterTeachers()" placeholder="Cari nama guru..." class="w-full pl-10 pr-4 py-3 sm:py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm shadow-sm">
+                </div>
+                <div class="text-xs text-slate-500 flex items-center justify-between w-full sm:w-auto">
+                    <span><i class="fa-solid fa-users mr-1"></i> Total Guru: <strong id="total-teachers-count" class="text-slate-700">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Teachers Cards Grid -->
+            <div id="teachers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Dynamic cards generated here -->
+            </div>
+        </section>
+
+        <!-- SECTION 2: RESULTS PAGE -->
+        <section id="page-results" class="hidden space-y-6 sm:space-y-8">
+            <div class="text-center max-w-2xl mx-auto px-2">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Hasil Perolehan Suara Real-Time</h2>
+                <p class="text-slate-500 text-xs sm:text-sm mt-1">Data diperbarui secara otomatis setiap kali ada suara baru yang masuk.</p>
+                
+                <!-- Admin Control / Testing Helpers -->
+                <div class="mt-4 flex items-center justify-center gap-2 flex-wrap text-xs">
+                    <button onclick="clearAllSystemVotes()" class="px-3 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 rounded-lg transition font-medium">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Reset Semua Suara ke 0
+                    </button>
+                    <button onclick="addRandomDemoVotes()" class="px-3 py-1.5 bg-slate-200 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 rounded-lg transition font-medium">
+                        <i class="fa-solid fa-dice mr-1"></i> Isi Suara Uji Coba (Demo)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Top Tergaul Leader -->
+                <div class="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-15 text-7xl sm:text-8xl">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <span class="bg-white/20 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">Pemimpin Sementara</span>
+                    <h3 class="text-lg sm:text-xl font-bold mt-2">Guru Tergaul</h3>
+                    <div id="top-tergaul-card" class="mt-3 sm:mt-4 flex items-center space-x-3 sm:space-x-4">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-xl sm:text-2xl font-bold shrink-0">
+                            🏆
+                        </div>
+                        <div class="min-w-0">
+                            <p id="top-tergaul-name" class="text-lg sm:text-2xl font-black truncate">Belum Ada Suara</p>
+                            <p id="top-tergaul-count" class="text-xs sm:text-sm text-pink-100">0 Suara</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Terbaik Leader -->
+                <div class="bg-gradient-to-br from-amber-500 to-indigo-600 rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-15 text-7xl sm:text-8xl">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <span class="bg-white/20 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">Pemimpin Sementara</span>
+                    <h3 class="text-lg sm:text-xl font-bold mt-2">Guru Terbaik</h3>
+                    <div id="top-terbaik-card" class="mt-3 sm:mt-4 flex items-center space-x-3 sm:space-x-4">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-xl sm:text-2xl font-bold shrink-0">
+                            🌟
+                        </div>
+                        <div class="min-w-0">
+                            <p id="top-terbaik-name" class="text-lg sm:text-2xl font-black truncate">Belum Ada Suara</p>
+                            <p id="top-terbaik-count" class="text-xs sm:text-sm text-amber-100">0 Suara</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <!-- Tergaul Chart & List -->
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-pink-500"></i> Rank Guru Tergaul
+                        </h3>
+                        <span id="total-tergaul-votes" class="text-[11px] sm:text-xs bg-slate-100 font-semibold text-slate-600 px-2.5 py-1 rounded-full">Total: 0 Suara</span>
+                    </div>
+                    <div class="h-56 sm:h-64 relative">
+                        <canvas id="chartTergaul"></canvas>
+                    </div>
+                    <div id="list-tergaul" class="space-y-2.5 max-h-56 sm:max-h-60 overflow-y-auto pr-2 custom-scrollbar border-t border-slate-100 pt-3">
+                        <!-- List view -->
+                    </div>
+                </div>
+
+                <!-- Terbaik Chart & List -->
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-amber-500"></i> Rank Guru Terbaik
+                        </h3>
+                        <span id="total-terbaik-votes" class="text-[11px] sm:text-xs bg-slate-100 font-semibold text-slate-600 px-2.5 py-1 rounded-full">Total: 0 Suara</span>
+                    </div>
+                    <div class="h-56 sm:h-64 relative">
+                        <canvas id="chartTerbaik"></canvas>
+                    </div>
+                    <div id="list-terbaik" class="space-y-2.5 max-h-56 sm:max-h-60 overflow-y-auto pr-2 custom-scrollbar border-t border-slate-100 pt-3">
+                        <!-- List view -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Konfirmasi -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-center transform transition-all">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-check-to-slot"></i>
+            </div>
+            <div>
+                <h3 class="text-lg sm:text-xl font-bold text-slate-900">Konfirmasi Pilihan</h3>
+                <p id="modal-text" class="text-xs sm:text-sm text-slate-500 mt-2">Apakah Anda yakin memilih guru ini?</p>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="closeModal()" class="w-1/2 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl active:bg-slate-100 transition text-xs sm:text-sm">
+                    Batal
+                </button>
+                <button id="modal-confirm-btn" class="w-1/2 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition text-xs sm:text-sm">
+                    Ya, Pilih!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 w-[90%] sm:w-auto bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg shrink-0"></i>
+        <span id="toast-message" class="text-xs sm:text-sm font-medium">Notifikasi</span>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-4 sm:py-6 mt-8 sm:mt-12">
+        <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p>© 2026 E-Voting Sekolah. Dibuat untuk Apresiasi Guru.</p>
+        </div>
+    </footer>
+
+    <script>
+        // =========================================================================
+        // CONFIGURATION: Google Apps Script Web App URL
+        // =========================================================================
+        const GOOGLE_SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypBPrAiTf-LHCig-bWzKxEJGH_fuczUs2BEmkcswuxNM5lM3OslIwr04QFG5jpnP7exw/exec"; 
+
+        // List Guru Sesuai Permintaan
+        const teacherNames = [
+            "Pak Wildan", "Pak masroni", "Pak Fakhri", "Pak Zailani", "Pak Fauzi", 
+            "Pak Ikrom", "Pak vickry", "Pak Hilmi", "Pak guntur", "Pak Suryadi", 
+            "Pak amar", "Pak uslani", "Pak Kiki", "Bu Devi", "Bu naila", "Bu Ririn", 
+            "Bu Kurnia", "Bu Syarifah", "Bu Ima", "Bu Widi", "Miss Ulfa", 
+            "Miss Dilla", "Ustadzah hidyah", "Ustadz Syarif", "Ustadz Fattah"
+        ];
+
+        // System State
+        let currentTab = 'vote'; // 'vote' or 'results'
+        let currentCategory = 'tergaul'; // 'tergaul' or 'terbaik'
+        let myVotes = {
+            tergaul: null,
+            terbaik: null
+        };
+        let pendingVote = null;
+
+        // Cumulative vote counts for all teachers
+        let systemVotes = {
+            tergaul: {},
+            terbaik: {}
+        };
+
+        // Chart instances
+        let chartTergaulInstance = null;
+        let chartTerbaikInstance = null;
+
+        // Initialize App on Load
+        window.onload = function() {
+            initSystemVotes();
+            loadMyVotes();
+            renderTeachers();
+            updateVoteStatusBanner();
+            initCharts();
+            updateResultsUI();
+        };
+
+        function initSystemVotes() {
+            const savedSystemVotes = localStorage.getItem('evoting_system_votes_v2');
+            if (savedSystemVotes) {
+                try {
+                    systemVotes = JSON.parse(savedSystemVotes);
+                } catch(e) {
+                    resetSystemVotesToZero();
+                }
+            } else {
+                resetSystemVotesToZero();
+            }
+
+            // Ensure every teacher in teacherNames exists in the systemVotes object
+            teacherNames.forEach(name => {
+                if (systemVotes.tergaul[name] === undefined) systemVotes.tergaul[name] = 0;
+                if (systemVotes.terbaik[name] === undefined) systemVotes.terbaik[name] = 0;
+            });
+        }
+
+        function resetSystemVotesToZero() {
+            systemVotes = { tergaul: {}, terbaik: {} };
+            teacherNames.forEach(name => {
+                systemVotes.tergaul[name] = 0;
+                systemVotes.terbaik[name] = 0;
+            });
+            saveSystemVotes();
+        }
+
+        function saveSystemVotes() {
+            localStorage.setItem('evoting_system_votes_v2', JSON.stringify(systemVotes));
+        }
+
+        function loadMyVotes() {
+            const savedMyVotes = localStorage.getItem('evoting_my_user_votes');
+            if (savedMyVotes) {
+                try {
+                    myVotes = JSON.parse(savedMyVotes);
+                } catch(e) {
+                    myVotes = { tergaul: null, terbaik: null };
+                }
+            }
+        }
+
+        function saveMyVotes() {
+            localStorage.setItem('evoting_my_user_votes', JSON.stringify(myVotes));
+        }
+
+        // Navigation Tabs (Vote vs Results)
+        function switchTab(tab) {
+            currentTab = tab;
+            const voteNav = document.getElementById('nav-vote');
+            const resultsNav = document.getElementById('nav-results');
+            const votePage = document.getElementById('page-vote');
+            const resultsPage = document.getElementById('page-results');
+
+            if (tab === 'vote') {
+                voteNav.className = "flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 bg-white text-indigo-900 shadow active:scale-95";
+                resultsNav.className = "flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 text-white hover:bg-white/10 active:scale-95";
+                votePage.classList.remove('hidden');
+                resultsPage.classList.add('hidden');
+            } else {
+                resultsNav.className = "flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 bg-white text-indigo-900 shadow active:scale-95";
+                voteNav.className = "flex-1 sm:flex-initial px-4 py-2.5 rounded-lg transition-all duration-200 text-white hover:bg-white/10 active:scale-95";
+                votePage.classList.add('hidden');
+                resultsPage.classList.remove('hidden');
+                updateResultsUI();
+            }
+        }
+
+        // Category Switcher (Tergaul vs Terbaik)
+        function switchCategory(category) {
+            currentCategory = category;
+            const tabTergaul = document.getElementById('tab-tergaul');
+            const tabTerbaik = document.getElementById('tab-terbaik');
+
+            if (category === 'tergaul') {
+                tabTergaul.className = "flex-1 sm:flex-initial border-b-2 border-indigo-600 py-3 sm:py-4 px-2 text-xs sm:text-base font-bold text-indigo-600 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition";
+                tabTerbaik.className = "flex-1 sm:flex-initial border-b-2 border-transparent py-3 sm:py-4 px-2 text-xs sm:text-base font-medium text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition";
+            } else {
+                tabTerbaik.className = "flex-1 sm:flex-initial border-b-2 border-indigo-600 py-3 sm:py-4 px-2 text-xs sm:text-base font-bold text-indigo-600 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition";
+                tabTergaul.className = "flex-1 sm:flex-initial border-b-2 border-transparent py-3 sm:py-4 px-2 text-xs sm:text-base font-medium text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition";
+            }
+
+            renderTeachers();
+        }
+
+        function filterTeachers() {
+            renderTeachers();
+        }
+
+        // Render Teachers Grid
+        function renderTeachers() {
+            const grid = document.getElementById('teachers-grid');
+            const searchQuery = (document.getElementById('search-input').value || '').toLowerCase();
+            
+            const filtered = teacherNames.filter(name => name.toLowerCase().includes(searchQuery));
+            document.getElementById('total-teachers-count').innerText = filtered.length;
+
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400 space-y-2">
+                        <i class="fa-solid fa-user-slash text-4xl"></i>
+                        <p class="text-sm">Tidak ada guru dengan nama "${searchQuery}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const chosenTeacherForCategory = myVotes[currentCategory];
+
+            filtered.forEach(name => {
+                const isSelected = chosenTeacherForCategory === name;
+                const categoryTheme = currentCategory === 'tergaul' ? 'pink' : 'amber';
+                const categoryIcon = currentCategory === 'tergaul' ? 'fa-fire' : 'fa-star';
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between shadow-sm hover:shadow-md ${
+                    isSelected ? `border-2 border-${currentCategory === 'tergaul' ? 'pink' : 'indigo'}-500 bg-${currentCategory === 'tergaul' ? 'pink' : 'indigo'}-50/30` : 'border-slate-100'
+                }`;
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${isSelected ? (currentCategory === 'tergaul' ? 'bg-pink-500 text-white' : 'bg-indigo-600 text-white') : 'bg-slate-100 text-slate-600'} flex items-center justify-center text-base sm:text-lg font-bold shrink-0">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            ${isSelected ? `
+                                <span class="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <i class="fa-solid fa-check"></i> Pilihan Anda
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">${name}</h4>
+                            <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                                <i class="fa-solid ${categoryIcon} text-${categoryTheme}-500"></i> Kategori Guru ${currentCategory === 'tergaul' ? 'Tergaul' : 'Terbaik'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <button onclick="promptVote('${name}')" ${isSelected ? 'disabled' : ''} class="w-full py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 flex items-center justify-center gap-1.5 ${
+                            isSelected 
+                            ? 'bg-emerald-100 text-emerald-700 cursor-default' 
+                            : currentCategory === 'tergaul' 
+                                ? 'bg-pink-50 text-pink-600 hover:bg-pink-100 active:bg-pink-200' 
+                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:bg-indigo-200'
+                        }">
+                            <i class="fa-solid ${isSelected ? 'fa-circle-check' : 'fa-check-to-slot'}"></i>
+                            <span>${isSelected ? 'Sudah Dipilih' : 'Pilih Guru Ini'}</span>
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Open Confirmation Modal
+        function promptVote(teacherName) {
+            pendingVote = {
+                category: currentCategory,
+                teacherName: teacherName
+            };
+
+            const modalText = document.getElementById('modal-text');
+            const categoryLabel = currentCategory === 'tergaul' ? 'Guru Tergaul' : 'Guru Terbaik';
+            modalText.innerHTML = `Apakah Anda yakin ingin memilih <strong>${teacherName}</strong> sebagai <strong>${categoryLabel}</strong>?`;
+
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            confirmBtn.onclick = confirmVote;
+
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            pendingVote = null;
+        }
+
+        // Confirm & Execute Vote
+        function confirmVote() {
+            if (!pendingVote) return;
+
+            const { category, teacherName } = pendingVote;
+
+            // If user previously voted for someone else in this category, decrement previous count
+            const prevChoice = myVotes[category];
+            if (prevChoice && systemVotes[category][prevChoice] > 0) {
+                systemVotes[category][prevChoice]--;
+            }
+
+            // Set new vote
+            myVotes[category] = teacherName;
+            systemVotes[category][teacherName] = (systemVotes[category][teacherName] || 0) + 1;
+
+            saveMyVotes();
+            saveSystemVotes();
+
+            // Send vote to Google Sheets database asynchronously
+            sendVoteToGoogleSheet(category, teacherName);
+
+            closeModal();
+            renderTeachers();
+            updateVoteStatusBanner();
+            showToast(`Berhasil memilih ${teacherName} sebagai Guru ${category === 'tergaul' ? 'Tergaul' : 'Terbaik'}!`);
+        }
+
+        // Async payload to Google Apps Script
+        function sendVoteToGoogleSheet(category, teacherName) {
+            if (!GOOGLE_SHEET_SCRIPT_URL || GOOGLE_SHEET_SCRIPT_URL.includes("PASTE_YOUR")) return;
+
+            fetch(GOOGLE_SHEET_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    category: category,
+                    teacherName: teacherName
+                })
+            }).catch(err => console.error("Database connection error:", err));
+        }
+
+        // Reset User's Individual Choice
+        function resetMyVotes() {
+            if (myVotes.tergaul && systemVotes.tergaul[myVotes.tergaul] > 0) {
+                systemVotes.tergaul[myVotes.tergaul]--;
+            }
+            if (myVotes.terbaik && systemVotes.terbaik[myVotes.terbaik] > 0) {
+                systemVotes.terbaik[myVotes.terbaik]--;
+            }
+
+            myVotes = { tergaul: null, terbaik: null };
+            saveMyVotes();
+            saveSystemVotes();
+
+            renderTeachers();
+            updateVoteStatusBanner();
+            showToast("Pilihan suara Anda telah direset.");
+        }
+
+        function updateVoteStatusBanner() {
+            const hasVotedTergaul = !!myVotes.tergaul;
+            const hasVotedTerbaik = !!myVotes.terbaik;
+
+            const badgeTergaul = document.getElementById('badge-tergaul');
+            const badgeTerbaik = document.getElementById('badge-terbaik');
+            const resetBtn = document.getElementById('reset-vote-btn');
+            const statusDesc = document.getElementById('status-desc');
+
+            if (hasVotedTergaul) badgeTergaul.classList.remove('hidden');
+            else badgeTergaul.classList.add('hidden');
+
+            if (hasVotedTerbaik) badgeTerbaik.classList.remove('hidden');
+            else badgeTerbaik.classList.add('hidden');
+
+            if (hasVotedTergaul || hasVotedTerbaik) {
+                resetBtn.classList.remove('hidden');
+                statusDesc.innerHTML = `
+                    Pilihan Anda: 
+                    ${hasVotedTergaul ? `<strong class="text-pink-700">Tergaul: ${myVotes.tergaul}</strong>` : 'Tergaul: -'} | 
+                    ${hasVotedTerbaik ? `<strong class="text-indigo-900">Terbaik: ${myVotes.terbaik}</strong>` : 'Terbaik: -'}
+                `;
+            } else {
+                resetBtn.classList.add('hidden');
+                statusDesc.innerText = "Silakan pilih 1 Guru Tergaul & 1 Guru Terbaik.";
+            }
+        }
+
+        // Clear All Votes in Local System (Admin Tool)
+        function clearAllSystemVotes() {
+            resetSystemVotesToZero();
+            myVotes = { tergaul: null, terbaik: null };
+            saveMyVotes();
+            renderTeachers();
+            updateVoteStatusBanner();
+            updateResultsUI();
+            showToast("Semua data perolehan suara telah direset ke 0.");
+        }
+
+        // Add Demo Data (Admin Tool)
+        function addRandomDemoVotes() {
+            teacherNames.forEach(name => {
+                systemVotes.tergaul[name] = Math.floor(Math.random() * 25);
+                systemVotes.terbaik[name] = Math.floor(Math.random() * 25);
+            });
+            saveSystemVotes();
+            updateResultsUI();
+            showToast("Data simulasi acak berhasil ditambahkan.");
+        }
+
+        // Initialize Chart.js Instances
+        function initCharts() {
+            const ctxTergaul = document.getElementById('chartTergaul').getContext('2d');
+            const ctxTerbaik = document.getElementById('chartTerbaik').getContext('2d');
+
+            chartTergaulInstance = new Chart(ctxTergaul, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Suara Guru Tergaul',
+                        data: [],
+                        backgroundColor: '#ec4899',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            chartTerbaikInstance = new Chart(ctxTerbaik, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Suara Guru Terbaik',
+                        data: [],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // Update Results Page UI (Charts, Leaderboard, Lists)
+        function updateResultsUI() {
+            // Sort data by votes descending
+            const sortedTergaul = [...teacherNames].sort((a, b) => (systemVotes.tergaul[b] || 0) - (systemVotes.tergaul[a] || 0));
+            const sortedTerbaik = [...teacherNames].sort((a, b) => (systemVotes.terbaik[b] || 0) - (systemVotes.terbaik[a] || 0));
+
+            const totalTergaul = Object.values(systemVotes.tergaul).reduce((a, b) => a + b, 0);
+            const totalTerbaik = Object.values(systemVotes.terbaik).reduce((a, b) => a + b, 0);
+
+            document.getElementById('total-tergaul-votes').innerText = `Total: ${totalTergaul} Suara`;
+            document.getElementById('total-terbaik-votes').innerText = `Total: ${totalTerbaik} Suara`;
+
+            // Update Top Leader Cards
+            const topTergaulName = sortedTergaul[0];
+            const topTergaulVotes = systemVotes.tergaul[topTergaulName] || 0;
+            document.getElementById('top-tergaul-name').innerText = topTergaulVotes > 0 ? topTergaulName : 'Belum Ada Suara';
+            document.getElementById('top-tergaul-count').innerText = `${topTergaulVotes} Suara`;
+
+            const topTerbaikName = sortedTerbaik[0];
+            const topTerbaikVotes = systemVotes.terbaik[topTerbaikName] || 0;
+            document.getElementById('top-terbaik-name').innerText = topTerbaikVotes > 0 ? topTerbaikName : 'Belum Ada Suara';
+            document.getElementById('top-terbaik-count').innerText = `${topTerbaikVotes} Suara`;
+
+            // Update Charts (Top 7 for clean view)
+            const topChartTergaul = sortedTergaul.slice(0, 7);
+            chartTergaulInstance.data.labels = topChartTergaul.map(n => n.length > 10 ? n.substring(0, 10) + '...' : n);
+            chartTergaulInstance.data.datasets[0].data = topChartTergaul.map(n => systemVotes.tergaul[n] || 0);
+            chartTergaulInstance.update();
+
+            const topChartTerbaik = sortedTerbaik.slice(0, 7);
+            chartTerbaikInstance.data.labels = topChartTerbaik.map(n => n.length > 10 ? n.substring(0, 10) + '...' : n);
+            chartTerbaikInstance.data.datasets[0].data = topChartTerbaik.map(n => systemVotes.terbaik[n] || 0);
+            chartTerbaikInstance.update();
+
+            // Update Full Rank Lists
+            renderRankList('list-tergaul', sortedTergaul, systemVotes.tergaul, totalTergaul, 'pink');
+            renderRankList('list-terbaik', sortedTerbaik, systemVotes.terbaik, totalTerbaik, 'indigo');
+        }
+
+        function renderRankList(elementId, sortedNames, voteObj, totalVotes, colorTheme) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+
+            sortedNames.forEach((name, index) => {
+                const votes = voteObj[name] || 0;
+                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 text-xs sm:text-sm';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 min-w-0 pr-2">
+                        <span class="w-6 h-6 rounded-lg font-bold flex items-center justify-center shrink-0 ${
+                            index === 0 ? 'bg-amber-100 text-amber-700' : index === 1 ? 'bg-slate-200 text-slate-700' : index === 2 ? 'bg-amber-800/10 text-amber-900' : 'bg-slate-100 text-slate-500'
+                        }">${index + 1}</span>
+                        <span class="font-semibold text-slate-800 truncate">${name}</span>
+                    </div>
+                    <div class="flex items-center space-x-3 shrink-0">
+                        <div class="w-16 sm:w-24 bg-slate-100 rounded-full h-2 overflow-hidden hidden sm:block">
+                            <div class="bg-${colorTheme}-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="font-bold text-slate-700 w-12 text-right">${votes} <span class="text-[10px] text-slate-400 font-normal">(${percentage}%)</span></span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Toast Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
